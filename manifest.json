@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Quick Anki",
+  "version": "1.0.0",
+  "description": "Shortcut key to open a popup and save words to Anki.",
+  "action": {
+    "default_popup": "index.html"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+K",
+        "mac": "Ctrl+Shift+K"
+      },
+      "description": "Open Anki Quick Adder"
+    }
+  },
+  "host_permissions": ["http://127.0.0.1:8765/"]
+}
