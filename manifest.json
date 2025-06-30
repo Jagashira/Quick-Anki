@@ -21,7 +21,7 @@
         "default": "Ctrl+Shift+K",
         "mac": "Ctrl+Shift+K"
       },
-      "description": "Open Anki Quick Adder"
+      "description": "Open Anki Quick"
     }
   },
   "host_permissions": [
@@ -32,7 +32,7 @@
   "permissions": ["contextMenus", "storage", "notifications"],
   "options_page": "options.html",
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; connect-src 'self' http://127.0.0.1:8765 https://anki-api.vercel.app;"
+    "extension_pages": "script-src 'self'; connect-src 'self' http://127.0.0.1:8765 https://anki-api.vercel.app http://localhost:3000;"
   },
   "background": {
     "service_worker": "src/background.ts",
