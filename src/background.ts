@@ -82,6 +82,9 @@ async function handleAddWord(
           tags = result.tags;
         });
     }
+    const apiKey = await chrome.storage.sync
+      .get("apiKey")
+      .then((result) => result.apiKey);
 
     if (await isDuplicate(word, deckName)) {
       showNotification({
@@ -95,7 +98,7 @@ async function handleAddWord(
     const apiResponse = await fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ word, prompt }),
+      body: JSON.stringify({ word, prompt, apiKey }),
     });
     const apiData = (await apiResponse.json()) as WordInfo;
 
