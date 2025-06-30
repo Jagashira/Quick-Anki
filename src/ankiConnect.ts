@@ -11,9 +11,8 @@ export async function invokeAnkiConnect(action: string, params: object = {}) {
     if (data.error) throw new Error(data.error);
     return data.result;
   } catch (error) {
-    console.error("Anki-Connect Error:", error);
     throw new Error(
-      "Anki-Connectに接続できませんでした。Ankiが起動しているか確認してください。"
+      `Anki-Connectに接続できませんでした。Ankiが起動しているか確認してください。`
     );
   }
 }
