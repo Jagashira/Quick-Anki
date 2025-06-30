@@ -6,13 +6,8 @@ import { buildBackContent } from "./lib/buildBackContent";
 import type { WordInfo } from "./types";
 
 const API_URL = import.meta.env.VITE_API_URL;
-
 const DEFAULT_ICON_PATH = "icons/icon48.png";
 
-/**
- * showNotification関数に渡す引数の型を定義
- * titleとmessageを必須にする
- */
 type NotificationInfo = {
   title: string;
   message: string;
@@ -21,24 +16,15 @@ type NotificationInfo = {
   "title" | "message" | "type" | "iconUrl"
 >;
 
-/**
- * 汎用的な通知表示関数
- * @param info 通知のタイトル、メッセージ、および追加オプション
- */
 function showNotification(info: NotificationInfo) {
-  // 中間変数を使わずに、create関数に直接オブジェクトを渡す
   chrome.notifications.create({
     type: "basic",
     iconUrl: DEFAULT_ICON_PATH,
     priority: 0,
-    ...info, // 必須のtitle, messageを含むinfoオブジェクトを展開する
+    ...info,
   });
 }
 
-/**
- * Ankiの接続状態をチェックし、アイコンバッジを更新する
- * @returns {boolean} 接続されていれば true
- */
 async function checkAnkiConnectStatus(): Promise<boolean> {
   let isConnected = false;
   try {
@@ -61,12 +47,6 @@ async function checkAnkiConnectStatus(): Promise<boolean> {
   return isConnected;
 }
 
-/**
- * Anki内に指定した単語が既に存在するかチェックする
- * @param word チェックする単語
- * @param deckName 対象のデッキ名
- * @returns {boolean} 存在すれば true
- */
 async function isDuplicate(word: string, deckName: string): Promise<boolean> {
   const duplicateNotes = await invokeAnkiConnect("findNotes", {
     query: `deck:"${deckName}" Front:"${word}"`,
@@ -74,119 +54,78 @@ async function isDuplicate(word: string, deckName: string): Promise<boolean> {
   return duplicateNotes.length > 0;
 }
 
-// =================================================================
-// メイン処理（単語追加）
-// =================================================================
-
-/**
- * 【コンテキストメニュー用】ChatGPT API経由で詳細なノートを作成・追加する
- * @param word 選択された単語
- */
-async function handleContextMenuAddition(word: string) {
+async function handleAddWord(
+  word: string,
+  inputDeckName?: string,
+  inputTags?: string[]
+) {
+  console.log("handleAddWord called with:", { word, inputDeckName, inputTags });
   try {
-    const settings = await chrome.storage.sync.get({
-      deckName: "Default",
-      tags: ["chrome-extension", "chatgpt-generated"],
-    });
+    let deckName = inputDeckName?.trim() || "";
+    let tags = inputTags?.map((tag) => tag.trim()) || [];
 
-    if (await isDuplicate(word, settings.deckName)) {
-      showNotification({
-        title: "登録済みです",
-        message: `単語「${word}」は既にAnkiに登録されています。`,
-      });
-      return;
+    if (!inputDeckName || inputDeckName.length === 0) {
+      await chrome.storage.sync
+        .get({
+          deckName: "Default",
+        })
+        .then((result) => {
+          deckName = result.deckName;
+        });
+    }
+    if (!inputTags || inputTags.length === 0) {
+      await chrome.storage.sync
+        .get({
+          tags: ["chrome-extension", "chatgpt-generated"],
+        })
+        .then((result) => {
+          tags = result.tags;
+        });
     }
 
-    // ChatGPT APIから詳細情報を取得
-    const prompt = prompts.english.prompt(word); // ./definition.ts に定義されていると仮定
-    const apiResponse = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ word, prompt }),
-    });
-    const apiData = (await apiResponse.json()) as WordInfo;
-
-    if (!apiResponse.ok) {
-      throw new Error(apiData.error || "APIサーバーでエラーが発生しました");
-    }
-
-    // HTMLの裏面コンテンツを構築
-    const backContent = buildBackContent(apiData);
-
-    await invokeAnkiConnect("addNote", {
-      note: {
-        deckName: settings.deckName,
-        modelName: "Basic",
-        fields: { Front: word, Back: backContent },
-        tags: settings.tags,
-      },
-    });
-
-    showNotification({
-      title: `「${word}」を追加しました！`,
-      message: `デッキ: ${settings.deckName}`,
-      contextMessage: `タグ: ${settings.tags.join(", ")}`,
-    });
-  } catch (error) {
-    showNotification({
-      title: "エラーが発生しました",
-      message: error instanceof Error ? error.message : "不明なエラーです。",
-    });
-    console.error("コンテキストメニュー処理中にエラー:", error);
-  }
-}
-
-/**
- * 【ポップアップ用】シンプルなノートを追加する
- * @param note ポップアップから受け取ったノート情報
- */
-async function handlePopupAddition(note: {
-  word: string;
-  deckName: string;
-  tags: string[];
-}) {
-  const { word, deckName, tags } = note;
-  try {
     if (await isDuplicate(word, deckName)) {
       showNotification({
-        title: "登録済みです",
-        message: `単語「${deckName}」は既にAnkiに登録されています。`,
+        title: `登録済みです`,
+        message: `単語「${word}」 (${deckName})は既にAnkiに登録されています。`,
       });
       return;
     }
 
-    // ChatGPT APIから詳細情報を取得
-    const prompt = prompts.english.prompt(word); // ./definition.ts に定義されていると仮定
+    const prompt = prompts.english.prompt(word);
     const apiResponse = await fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ word, prompt }),
     });
     const apiData = (await apiResponse.json()) as WordInfo;
+
     if (!apiResponse.ok) {
       throw new Error(apiData.error || "APIサーバーでエラーが発生しました");
     }
 
-    // HTMLの裏面コンテンツを構築
     const backContent = buildBackContent(apiData);
 
     await invokeAnkiConnect("addNote", {
       note: {
-        deckName: note.deckName,
+        deckName: deckName,
         modelName: "Basic",
-        fields: { Front: word, Back: backContent }, // ポップアップからは裏面は空
+        fields: { Front: word, Back: backContent },
         tags: tags,
       },
     });
 
     showNotification({
-      title: "Ankiに登録完了",
-      message: `単語「${note.word}」を登録しました。`,
+      title: `「${word}」を追加しました！`,
+      message: `デッキ: ${deckName}`,
+      contextMessage: `タグ: ${tags.join(", ")}`,
     });
-
     return { success: true };
   } catch (error) {
-    console.error("ポップアップ処理中にエラー:", error);
+    showNotification({
+      title: "エラーが発生しました",
+      message: error instanceof Error ? error.message : "不明なエラーです。",
+    });
+    console.error(error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "不明なエラーです。",
@@ -194,28 +133,21 @@ async function handlePopupAddition(note: {
   }
 }
 
-// =================================================================
-// Chromeイベントリスナー
-// =================================================================
-
-// 拡張機能インストール時・更新時
 chrome.runtime.onInstalled.addListener(() => {
   console.log("Extension installed or updated.");
   chrome.contextMenus.create({
     id: "add-word-via-api",
-    title: "「%s」をAnkiに追加 (ChatGPT利用)",
+    title: "「%s」をAnkiに追加",
     contexts: ["selection"],
   });
   checkAnkiConnectStatus();
 });
 
-// ブラウザ起動時
 chrome.runtime.onStartup.addListener(() => {
   console.log("Browser started.");
   checkAnkiConnectStatus();
 });
 
-// コンテキストメニュークリック時
 chrome.contextMenus.onClicked.addListener(async (info) => {
   if (info.menuItemId !== "add-word-via-api" || !info.selectionText) return;
 
@@ -226,11 +158,10 @@ chrome.contextMenus.onClicked.addListener(async (info) => {
     });
     return;
   }
-
-  handleContextMenuAddition(info.selectionText.trim());
+  handleAddWord(info.selectionText);
 });
 
-// ポップアップやオプションページからのメッセージ受信時
+//app.tsxでのrequest
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   (async () => {
     switch (request.type) {
@@ -266,9 +197,9 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
         }
         break;
       }
-      // ★★★ ポップアップからの単語追加リクエストをここに追加 ★★★
       case "addNote": {
-        const result = await handlePopupAddition(request.note);
+        const { word, deckName, tags } = request.note;
+        const result = await handleAddWord(word, deckName, tags);
         sendResponse(result);
         break;
       }
@@ -278,5 +209,5 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     }
   })();
 
-  return true; //非同期処理を正しく待つために必要
+  return true;
 });
