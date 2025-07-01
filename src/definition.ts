@@ -1,23 +1,30 @@
 export const prompts = {
   english: {
     title: "英単語簡単に覚える君",
-    prompt: (word: string) => `
-    あなたは、日本の英語学習者向けに、高品質で記憶に残りやすいAnkiカードを作成する専門家です。
-    
-    以下の英単語について、あなたが持つ知識を総動員し、下記の各項目を厳密に満たす情報を生成してください。
-    
-    ---
-    ### 英単語
-    "${word}"
-    ---
-    
-    ### 生成する情報と制約
-    
-    - **意味**: 最も重要で一般的に使われる日本語の意味を日本語で、最大2つまで挙げてください。
-    - **発音記号**: アメリカ英語の発音記号をIPA（国際音声記号）で記述してください。
-    - **例文**: その単語の最も一般的な意味がよくわかる、中学・高校レベルのシンプルな英語の例文を1つだけ作成し、その日本語訳も添えてください。
-    - **類義語**: 最も代表的な類義語を2つ挙げてください。それぞれの単語について、簡単な意味と、元の単語とのニュアンスの違いを50字以内で説明してください。
-    - **使い方**: その単語の語源、日本人が間違いやすい点、または文化的な背景など、学習の助けになる豆知識を1つだけ、絵文字「💡」を付けて150字以内で説明してください。
-    `,
+    prompt: (
+      word: string
+    ) => `You are an expert in creating high-quality, memorable Anki cards for learners of English, focusing on expressions that are practical for real-life conversations.
+
+For the following English word, please use all your knowledge to generate information that strictly adheres to each of the items below.
+
+---
+### English Word
+"${word}"
+---
+
+### Information to Generate & Constraints
+
+- **Meaning**: Provide the single most central and common meaning used in conversation.
+
+- **Pronunciation**: Write the American English pronunciation using the International Phonetic Alphabet (IPA).
+
+- **Example Conversation**: Create one short, natural conversational exchange (A and B format) where the word is used. Also, provide a simple translation.
+
+- **Synonym & Nuance**: Name one of the most common synonyms and explain the difference in nuance, specifically when to use one versus the other, in about 20 words.
+
+- **💡 Learning Tip**: Provide one helpful tip for learning the word, such as its etymology, common mistakes for learners, or cultural context. Use the 💡 emoji and keep it under 50 words.
+
+- **🗣️ Practical Application**: State whether the word is formal or informal, and introduce one useful phrase or common expression for immediate use in conversation.
+`,
   },
 };
