@@ -3,10 +3,12 @@
 import { invokeAnkiConnect } from "./ankiConnect";
 import { prompts } from "./definition";
 import { buildBackContent } from "./lib/buildBackContent";
-import type { WordInfo } from "./types";
+import type { HistoryItem, WordInfo } from "./types";
 
 const API_URL = import.meta.env.VITE_API_URL;
 const DEFAULT_ICON_PATH = "icons/icon48.png";
+const HISTORY_KEY = "quickAnkiHistory";
+const MAX_HISTORY_ITEMS = 10;
 
 type NotificationInfo = {
   title: string;
@@ -54,6 +56,33 @@ async function isDuplicate(word: string, deckName: string): Promise<boolean> {
   return duplicateNotes.length > 0;
 }
 
+async function updateHistory(word: string, details: WordInfo) {
+  try {
+    const result = await chrome.storage.local.get([HISTORY_KEY]);
+    const currentHistory: HistoryItem[] = result[HISTORY_KEY] || [];
+
+    // 履歴に既に同じ単語があれば一旦削除（先頭に移動させるため）
+    const filteredHistory = currentHistory.filter((item) => item.word !== word);
+
+    // 新しい履歴アイテムを作成
+    const newHistoryItem: HistoryItem = {
+      word: word,
+      timestamp: Date.now(),
+      details: details,
+    };
+
+    // 新しいアイテムを履歴の先頭に追加
+    const newHistory = [newHistoryItem, ...filteredHistory];
+
+    // 履歴を最大件数に制限
+    const trimmedHistory = newHistory.slice(0, MAX_HISTORY_ITEMS);
+
+    await chrome.storage.local.set({ [HISTORY_KEY]: trimmedHistory });
+    console.log("History updated with details for:", word);
+  } catch (error) {
+    console.error("Failed to update history:", error);
+  }
+}
 async function handleAddWord(
   word: string,
   inputDeckName?: string,
@@ -91,6 +120,12 @@ async function handleAddWord(
         title: `登録済みです`,
         message: `単語「${word}」 (${deckName})は既にAnkiに登録されています。`,
       });
+      const result = await chrome.storage.local.get([HISTORY_KEY]);
+      const history: HistoryItem[] = result[HISTORY_KEY] || [];
+      const existingItem = history.find((item) => item.word === word);
+      if (existingItem) {
+        await updateHistory(word, existingItem.details);
+      }
       return;
     }
 
@@ -117,11 +152,14 @@ async function handleAddWord(
       },
     });
 
+    await updateHistory(word, apiData);
+
     showNotification({
       title: `「${word}」を追加しました！`,
       message: `デッキ: ${deckName}`,
       contextMessage: `タグ: ${tags.join(", ")}`,
     });
+
     return { success: true };
   } catch (error) {
     showNotification({

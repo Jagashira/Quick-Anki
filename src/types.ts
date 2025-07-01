@@ -23,3 +23,9 @@ export type MediaData = {
   filename: string;
   data: string;
 };
+
+export type HistoryItem = {
+  word: string;
+  timestamp: number;
+  details: WordInfo;
+};
