@@ -10,7 +10,7 @@ export async function invokeAnkiConnect(action: string, params: object = {}) {
     const data = await response.json();
     if (data.error) throw new Error(data.error);
     return data.result;
-  } catch (error) {
+  } catch (_error) {
     throw new Error(
       `Anki-Connectに接続できませんでした。Ankiが起動しているか確認してください。`
     );

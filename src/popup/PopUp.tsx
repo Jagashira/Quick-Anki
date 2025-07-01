@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import type { HistoryItem } from "./types";
-import { HistoryDetailModal } from "./components/HistoryDetailModal";
+import type { HistoryItem } from "../types";
+import { HistoryDetailModal } from "./_conponents/HistoryDetailModal";
 
 const HISTORY_KEY = "quickAnkiHistory";
 
-function App() {
+function PopUp() {
   // State for form inputs
   const [word, setWord] = useState("");
   const [deckName, setDeckName] = useState("");
@@ -288,4 +288,4 @@ function App() {
   );
 }
 
-export default App;
+export default PopUp;

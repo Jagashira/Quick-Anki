@@ -1,8 +1,8 @@
 /// <reference types="vite/client" />
 
-import { invokeAnkiConnect } from "./ankiConnect";
+import { invokeAnkiConnect } from "./_lib/ankiConnect";
 import { prompts } from "./definition";
-import { buildBackContent } from "./lib/buildBackContent";
+import { buildBackContent } from "./_lib/buildBackContent";
 import type { HistoryItem, WordInfo } from "./types";
 
 const API_URL = import.meta.env.VITE_API_URL;
